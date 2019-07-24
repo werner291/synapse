@@ -238,7 +238,7 @@ class SigningKeyUploadServlet(RestServlet):
     }
     """
 
-    PATTERNS = client_patterns("/keys/device_signing/upload$")
+    PATTERNS = client_patterns("/keys/device_signing/upload$", releases=())
 
     def __init__(self, hs):
         """
@@ -254,7 +254,7 @@ class SigningKeyUploadServlet(RestServlet):
     @interactive_auth_handler
     @defer.inlineCallbacks
     def on_POST(self, request):
-        requester = yield self.auth.get_user_by_req(request, allow_guest=True)
+        requester = yield self.auth.get_user_by_req(request)
         user_id = requester.user.to_string()
         body = parse_json_object_from_request(request)
 

@@ -634,8 +634,8 @@ class DeviceStore(DeviceWorkerStore, BackgroundUpdateStore):
                     raise StoreError(400, "The device ID is in use", Codes.FORBIDDEN)
             self.device_id_exists_cache.prefill(key, True)
             defer.returnValue(inserted)
-        except StoreError as e:
-            raise e
+        except StoreError:
+            raise
         except Exception as e:
             logger.error(
                 "store_device with device_id=%s(%r) user_id=%s(%r)"

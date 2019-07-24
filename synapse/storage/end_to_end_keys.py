@@ -337,7 +337,7 @@ class EndToEndKeyStore(EndToEndKeyWorkerStore, SQLBaseStore):
                 "user_id": user_id,
                 "keytype": key_type,
                 "keydata": json.dumps(key),
-                "ts": time.time() * 1000,
+                "added_ts": time.time() * 1000,
             },
             desc="store_master_key",
         )
@@ -376,7 +376,7 @@ class EndToEndKeyStore(EndToEndKeyWorkerStore, SQLBaseStore):
         sql = (
             "SELECT keydata "
             "  FROM e2e_cross_signing_keys "
-            " WHERE user_id = ? AND keytype = ? ORDER BY ts DESC LIMIT 1"
+            " WHERE user_id = ? AND keytype = ? ORDER BY added_ts DESC LIMIT 1"
         )
         txn.execute(sql, (user_id, key_type))
         row = txn.fetchone()

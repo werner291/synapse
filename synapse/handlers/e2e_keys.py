@@ -52,7 +52,7 @@ class E2eKeysHandler(object):
         )
 
     @defer.inlineCallbacks
-    def query_devices(self, query_body, timeout, from_user_id=None):
+    def query_devices(self, query_body, timeout, from_user_id):
         """ Handle a device key query from a client
 
         {
@@ -176,35 +176,36 @@ class E2eKeysHandler(object):
         defer.returnValue(ret)
 
     @defer.inlineCallbacks
-    def query_cross_signing_keys(self, query, from_user_id=None):
+    def query_cross_signing_keys(self, query, from_user_id):
         """Get cross-signing keys for users
 
         Args:
-            query (dict[string, *]): map from user_id.  This function only looks
-                at the dict's keys, and the values are ignored, so the query
-                format used for query_devices can be used.
+            query (Iterable[string]) an iterable of user IDs.  A dict whose keys
+                are user IDs satisfies this, so the query format used for
+                query_devices can be used here.
             from_user_id (str): the user making the query.  This is used when
                 adding cross-signing signatures to limit what signatures users
                 can see.
 
         Returns:
-            defer.Deferred: (resolves to dict[string, dict[string, dict]]): map from
-                (master|self_signing) -> map from user_id -> master key
+            defer.Deferred[dict[str, dict[str, dict]]]: map from
+                (master|self_signing|user_signing) -> user_id -> key
         """
         master_keys = {}
         self_signing_keys = {}
         user_signing_keys = {}
 
-        @defer.inlineCallbacks
-        def get_cross_signing_key(user_id):
+        for user_id in query:
+            # XXX: consider changing the store functions to allow querying
+            # multiple users simultaneously.
             try:
                 key = yield self.store.get_e2e_cross_signing_key(
                     user_id, "master", from_user_id
                 )
                 if key:
                     master_keys[user_id] = key
-            except Exception:
-                pass
+            except Exception as e:
+                logger.info("Error getting master key: %s", e)
 
             try:
                 key = yield self.store.get_e2e_cross_signing_key(
@@ -212,8 +213,8 @@ class E2eKeysHandler(object):
                 )
                 if key:
                     self_signing_keys[user_id] = key
-            except Exception:
-                pass
+            except Exception as e:
+                logger.info("Error getting self-signing key: %s", e)
 
             # users can see other users' master and self-signing keys, but can
             # only see their own user-signing keys
@@ -224,17 +225,8 @@ class E2eKeysHandler(object):
                     )
                     if key:
                         user_signing_keys[user_id] = key
-                except Exception:
-                    pass
-
-        yield make_deferred_yieldable(
-            defer.gatherResults(
-                [
-                    run_in_background(get_cross_signing_key, user_id)
-                    for user_id in query.keys()
-                ]
-            )
-        )
+                except Exception as e:
+                    logger.info("Error getting user-signing key: %s", e)
 
         defer.returnValue(
             {
@@ -524,19 +516,18 @@ def _check_cross_signing_key(key, user_id, key_type, signing_key=None):
             be signed with.  If omitted, signatures will not be checked.
     """
     if (
-        "user_id" not in key
-        or key["user_id"] != user_id
-        or "usage" not in key
-        or key_type not in key["usage"]
+        key.get("user_id") != user_id
+        or key_type not in key.get("usage", [])
+        or len(key.get("keys", {})) != 1
     ):
-        raise SynapseError(400, ("Invalid %s key" % key_type), Codes.INVALID_PARAM)
+        raise SynapseError(400, ("Invalid %s key" % (key_type,)), Codes.INVALID_PARAM)
 
     if signing_key:
         try:
             verify_signed_json(key, user_id, signing_key)
         except SignatureVerifyException:
             raise SynapseError(
-                400, ("Invalid signature or %s key" % key_type), Codes.INVALID_SIGNATURE
+                400, ("Invalid signature on %s key" % key_type), Codes.INVALID_SIGNATURE
             )
 
 

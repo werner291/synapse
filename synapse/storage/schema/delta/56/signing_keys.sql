@@ -18,13 +18,13 @@ CREATE TABLE IF NOT EXISTS e2e_cross_signing_keys (
     user_id TEXT NOT NULL,
     -- the type of cross-signing key (master, user_signing, or self_signing)
     keytype TEXT NOT NULL,
-    -- the full key information
+    -- the full key information, as a json-encoded dict
     keydata TEXT NOT NULL,
     -- time that the key was added
-    ts BIGINT NOT NULL
+    added_ts BIGINT NOT NULL
 );
 
-CREATE UNIQUE INDEX e2e_cross_signing_keys_idx ON e2e_cross_signing_keys(user_id, keytype, ts);
+CREATE UNIQUE INDEX e2e_cross_signing_keys_idx ON e2e_cross_signing_keys(user_id, keytype, added_ts);
 
 -- cross-signing signatures
 CREATE TABLE IF NOT EXISTS e2e_cross_signing_signatures (
