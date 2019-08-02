@@ -301,7 +301,7 @@ class E2eKeysHandler(object):
         ret = {"device_keys": device_keys}
 
         # add in the cross-signing keys
-        cross_signing_keys = yield self.query_cross_signing_keys(device_keys_query)
+        cross_signing_keys = yield self.query_cross_signing_keys(device_keys_query, None)
 
         for key, value in iteritems(cross_signing_keys):
             ret[key + "_keys"] = value
