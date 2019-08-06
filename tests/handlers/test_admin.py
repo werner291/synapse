@@ -59,9 +59,8 @@ class ExfiltrateData(unittest.HomeserverTestCase):
 
         writer.write_events.assert_called()
 
-        # Since we can see all events there shouldn't be any extremities, so no
-        # state should be written
-        writer.write_state.assert_not_called()
+        # Since we can't see all events there should be one extremity.
+        writer.write_state.assert_called_once()
 
         # Collect all events that were written
         written_events = []
@@ -73,8 +72,7 @@ class ExfiltrateData(unittest.HomeserverTestCase):
         counter = Counter(
             (event.type, getattr(event, "state_key", None)) for event in written_events
         )
-        self.assertEqual(counter[(EventTypes.Message, None)], 2)
-        self.assertEqual(counter[(EventTypes.Member, self.user1)], 1)
+        self.assertEqual(counter[(EventTypes.Message, None)], 1)
         self.assertEqual(counter[(EventTypes.Member, self.user2)], 1)
 
     def test_single_private_joined_room(self):
@@ -112,7 +110,6 @@ class ExfiltrateData(unittest.HomeserverTestCase):
             (event.type, getattr(event, "state_key", None)) for event in written_events
         )
         self.assertEqual(counter[(EventTypes.Message, None)], 1)
-        self.assertEqual(counter[(EventTypes.Member, self.user1)], 1)
         self.assertEqual(counter[(EventTypes.Member, self.user2)], 1)
 
     def test_single_left_room(self):
@@ -131,9 +128,8 @@ class ExfiltrateData(unittest.HomeserverTestCase):
 
         writer.write_events.assert_called()
 
-        # Since we can see all events there shouldn't be any extremities, so no
-        # state should be written
-        writer.write_state.assert_not_called()
+        # Since we can't see all events there should be one extremity.
+        writer.write_state.assert_called_once()
 
         written_events = []
         for (called_room_id, events), _ in writer.write_events.call_args_list:
@@ -144,8 +140,7 @@ class ExfiltrateData(unittest.HomeserverTestCase):
         counter = Counter(
             (event.type, getattr(event, "state_key", None)) for event in written_events
         )
-        self.assertEqual(counter[(EventTypes.Message, None)], 2)
-        self.assertEqual(counter[(EventTypes.Member, self.user1)], 1)
+        self.assertEqual(counter[(EventTypes.Message, None)], 1)
         self.assertEqual(counter[(EventTypes.Member, self.user2)], 2)
 
     def test_single_left_rejoined_private_room(self):
@@ -186,7 +181,6 @@ class ExfiltrateData(unittest.HomeserverTestCase):
             (event.type, getattr(event, "state_key", None)) for event in written_events
         )
         self.assertEqual(counter[(EventTypes.Message, None)], 2)
-        self.assertEqual(counter[(EventTypes.Member, self.user1)], 1)
         self.assertEqual(counter[(EventTypes.Member, self.user2)], 3)
 
     def test_invite(self):

@@ -46,7 +46,10 @@ def filter_events_for_client(
     store, user_id, events, is_peeking=False, always_include_ids=frozenset()
 ):
     """
-    Check which events a user is allowed to see
+    Check which events a user is allowed to see.
+
+    Note: Unless `is_peeking` is set to True assumes the user has subsequently
+    joined the room.
 
     Args:
         store (synapse.storage.DataStore): our datastore (can also be a worker

@@ -152,12 +152,11 @@ class AdminHandler(BaseHandler):
             # were joined. We estimate that point by looking at the
             # stream_ordering of the last membership if it wasn't a join.
             if room.membership == Membership.JOIN:
-                stream_ordering = yield self.store.get_room_max_stream_ordering()
+                to_key = yield self.store.get_room_events_max_id(room_id)
             else:
-                stream_ordering = room.stream_ordering
+                to_key = yield self.store.get_topological_token_for_event(room.event_id)
 
             from_key = str(RoomStreamToken(0, 0))
-            to_key = str(RoomStreamToken(None, stream_ordering))
 
             written_events = set()  # Events that we've processed in this room
 
@@ -186,7 +185,11 @@ class AdminHandler(BaseHandler):
 
                 from_key = events[-1].internal_metadata.after
 
-                events = yield filter_events_for_client(self.store, user_id, events)
+                # We set the `is_peeking` flag to true to only fetch events for
+                # when they were actually joined to the room.
+                events = yield filter_events_for_client(
+                    self.store, user_id, events, is_peeking=True
+                )
 
                 writer.write_events(room_id, events)
 
