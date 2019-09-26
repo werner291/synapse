@@ -484,6 +484,14 @@ class RoomsCreateTestCase(RoomBase):
         self.render(request)
         self.assertEquals(400, channel.code)
 
+    def test_post_inviteusers_mxid(self):
+        # POST with list of invitee, expect new room id
+        request, channel = self.make_request("POST", "/createRoom", b'{ "invite":["@alice:matrix.org"] }')
+
+        self.render(request)
+        self.assertEquals(200, channel.code, channel.result)
+        self.assertTrue("room_id" in channel.json_body)
+
 
 class RoomTopicTestCase(RoomBase):
     """ Tests /rooms/$room_id/topic REST events. """
