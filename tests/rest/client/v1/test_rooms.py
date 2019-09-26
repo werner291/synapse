@@ -492,6 +492,14 @@ class RoomsCreateTestCase(RoomBase):
         self.assertEquals(200, channel.code, channel.result)
         self.assertTrue("room_id" in channel.json_body)
 
+    def test_post_inviteusers_mxid_misformatted(self):
+        # POST with invitee with trailing space in JSON, should return error 400 bad request.
+        # Test created in relation to: https://github.com/matrix-org/synapse/issues/4088
+        request, channel = self.make_request("POST", "/createRoom", b'{ "invite":["@alice:matrix.org "] }')
+
+        self.render(request)
+        self.assertEquals(400, channel.code, channel.result)
+
 
 class RoomTopicTestCase(RoomBase):
     """ Tests /rooms/$room_id/topic REST events. """
